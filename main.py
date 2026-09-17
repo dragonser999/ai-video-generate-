@@ -12,9 +12,18 @@ from googleapiclient.http import MediaFileUpload
 GDRIVE_FOLDER_ID = os.getenv("GDRIVE_FOLDER_ID")
 GDRIVE_JSON_STR = os.getenv("GDRIVE_SERVICE_ACCOUNT_JSON")
 
-# Google Drive Auth Setup
+# Google Drive Auth Setup (Handling multi-line JSON formatting)
 def get_drive_service():
-    service_account_info = json.loads(GDRIVE_JSON_STR)
+    if not GDRIVE_JSON_STR:
+        raise ValueError("GDRIVE_SERVICE_ACCOUNT_JSON environment variable is not set!")
+    
+    # Safe JSON parsing for raw/multi-line string inputs
+    try:
+        service_account_info = json.loads(GDRIVE_JSON_STR)
+    except json.JSONDecodeError:
+        # Handles escaped character issues if pasted as raw string
+        service_account_info = json.loads(GDRIVE_JSON_STR.replace('\n', '\\n'))
+        
     credentials = Credentials.from_service_account_info(
         service_account_info,
         scopes=['https://www.googleapis.com/auth/drive.file']
