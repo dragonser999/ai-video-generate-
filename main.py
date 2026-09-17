@@ -1,33 +1,13 @@
 import os
-import json
 import asyncio
 import requests
 import urllib.parse
 import edge_tts
-from google.oauth2.service_account import Credentials
-from googleapiclient.discovery import build
-from googleapiclient.http import MediaFileUpload
+from mega import Mega
 
 # Environment Variables
-GDRIVE_FOLDER_ID = os.getenv("GDRIVE_FOLDER_ID")
-GDRIVE_JSON_STR = os.getenv("GDRIVE_SERVICE_ACCOUNT_JSON")
-
-# Google Drive Auth Setup
-def get_drive_service():
-    if not GDRIVE_JSON_STR:
-        raise ValueError("GDRIVE_SERVICE_ACCOUNT_JSON environment variable is not set!")
-    
-    try:
-        service_account_info = json.loads(GDRIVE_JSON_STR)
-    except json.JSONDecodeError:
-        service_account_info = json.loads(GDRIVE_JSON_STR.replace('\n', '\\n'))
-        
-    # Full Drive scope to bypass storage quota restrictions on shared folders
-    credentials = Credentials.from_service_account_info(
-        service_account_info,
-        scopes=['https://www.googleapis.com/auth/drive']
-    )
-    return build('drive', 'v3', credentials=credentials)
+MEGA_EMAIL = os.getenv("MEGA_EMAIL")
+MEGA_PASSWORD = os.getenv("MEGA_PASSWORD")
 
 # Step 1: Generate Audio using Edge-TTS
 async def generate_audio(text, output_file):
@@ -50,23 +30,19 @@ def generate_video_clip(prompt, output_file):
         print(f"Pollinations API Error Status: {response.status_code}")
         return False
 
-# Step 3: Upload Video to Google Drive
-def upload_to_drive(file_path, folder_id):
-    service = get_drive_service()
-    file_metadata = {
-        'name': os.path.basename(file_path),
-        'parents': [folder_id]
-    }
-    media = MediaFileUpload(file_path, resumable=True)
+# Step 3: Upload Video to MEGA.nz
+def upload_to_mega(file_path):
+    if not MEGA_EMAIL or not MEGA_PASSWORD:
+        raise ValueError("MEGA_EMAIL and MEGA_PASSWORD environment variables are required in Railway!")
+        
+    print("Logging in to MEGA.nz...")
+    mega = Mega()
+    m = mega.login(MEGA_EMAIL, MEGA_PASSWORD)
     
-    uploaded_file = service.files().create(
-        body=file_metadata,
-        media_body=media,
-        fields='id',
-        supportsAllDrives=True,
-        supportsTeamDrives=True
-    ).execute()
-    print(f"Uploaded successfully! File ID: {uploaded_file.get('id')}")
+    print(f"Uploading {file_path} to MEGA...")
+    file = m.upload(file_path)
+    link = m.get_upload_link(file)
+    print(f"Uploaded successfully to MEGA! Public Link: {link}")
 
 # Main Automation Pipeline
 async def main():
@@ -84,11 +60,11 @@ async def main():
     if generate_video_clip(prompt, video_path):
         print("Video clip generated successfully.")
         
-        # 3. Upload Result to Drive
-        upload_to_drive(video_path, GDRIVE_FOLDER_ID)
+        # 3. Upload Result to MEGA
+        upload_to_mega(video_path)
         print("Pipeline execution completed successfully.")
     else:
-        print("Video generation failed. Skipping Drive upload.")
+        print("Video generation failed. Skipping MEGA upload.")
 
 if __name__ == "__main__":
     asyncio.run(main())
