@@ -2,18 +2,15 @@ import os
 import json
 import asyncio
 import requests
+import urllib.parse
 import edge_tts
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 
 # Environment Variables
-HF_API_KEY = os.getenv("HF_API_KEY")
 GDRIVE_FOLDER_ID = os.getenv("GDRIVE_FOLDER_ID")
 GDRIVE_JSON_STR = os.getenv("GDRIVE_SERVICE_ACCOUNT_JSON")
-
-# Updated Hugging Face Router API Endpoint
-HF_API_URL = "https://router.huggingface.co/hf-inference/v1/models/ali-vilab/text-to-video-ms-1.7b"
 
 # Google Drive Auth Setup
 def get_drive_service():
@@ -29,21 +26,20 @@ async def generate_audio(text, output_file):
     communicate = edge_tts.Communicate(text, "en-US-ChristopherNeural")
     await communicate.save(output_file)
 
-# Step 2: Generate Video Clip via Hugging Face API
+# Step 2: Generate Video Clip via Pollinations AI (100% Free)
 def generate_video_clip(prompt, output_file):
-    headers = {
-        "Authorization": f"Bearer {HF_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    payload = {"inputs": prompt}
+    encoded_prompt = urllib.parse.quote(prompt)
+    url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?model=video"
     
-    response = requests.post(HF_API_URL, headers=headers, json=payload)
+    print(f"Generating video for prompt: '{prompt}'...")
+    response = requests.get(url)
+    
     if response.status_code == 200:
         with open(output_file, "wb") as f:
             f.write(response.content)
         return True
     else:
-        print(f"Hugging Face API Error: {response.status_code} - {response.text}")
+        print(f"Pollinations API Error Status: {response.status_code}")
         return False
 
 # Step 3: Upload Video to Google Drive
@@ -73,9 +69,9 @@ async def main():
 
     # 2. Prompt to Video
     video_path = "output_clip.mp4"
-    prompt = "A cinematic view of a futuristic digital server network, 4k"
+    prompt = "A futuristic digital server network glowing blue, high quality"
     if generate_video_clip(prompt, video_path):
-        print("Video clip generated.")
+        print("Video clip generated successfully.")
         
         # 3. Upload Result to Drive
         upload_to_drive(video_path, GDRIVE_FOLDER_ID)
