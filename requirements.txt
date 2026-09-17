@@ -1,3 +1,0 @@
-edge-tts
-requests
-git+https://github.com/odwyersoftware/mega.py.git
