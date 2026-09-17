@@ -12,8 +12,8 @@ HF_API_KEY = os.getenv("HF_API_KEY")
 GDRIVE_FOLDER_ID = os.getenv("GDRIVE_FOLDER_ID")
 GDRIVE_JSON_STR = os.getenv("GDRIVE_SERVICE_ACCOUNT_JSON")
 
-# Hugging Face Video Model Endpoint (Free Inference API)
-HF_API_URL = "https://router.huggingface.co/hf-inference/v1/models/damo-vilab/text-to-video-ms-1.7b"
+# Updated Hugging Face Router API Endpoint
+HF_API_URL = "https://router.huggingface.co/hf-inference/v1/models/ali-vilab/text-to-video-ms-1.7b"
 
 # Google Drive Auth Setup
 def get_drive_service():
@@ -31,7 +31,10 @@ async def generate_audio(text, output_file):
 
 # Step 2: Generate Video Clip via Hugging Face API
 def generate_video_clip(prompt, output_file):
-    headers = {"Authorization": f"Bearer {HF_API_KEY}"}
+    headers = {
+        "Authorization": f"Bearer {HF_API_KEY}",
+        "Content-Type": "application/json"
+    }
     payload = {"inputs": prompt}
     
     response = requests.post(HF_API_URL, headers=headers, json=payload)
@@ -74,12 +77,11 @@ async def main():
     if generate_video_clip(prompt, video_path):
         print("Video clip generated.")
         
-        # 3. Stitch & Merge (Placeholder for FFmpeg)
-        # Note: You can add FFmpeg subprocess commands here to combine audio & video
-        
-        # 4. Upload Result to Drive
+        # 3. Upload Result to Drive
         upload_to_drive(video_path, GDRIVE_FOLDER_ID)
         print("Pipeline execution completed successfully.")
+    else:
+        print("Video generation failed. Skipping Drive upload.")
 
 if __name__ == "__main__":
     asyncio.run(main())
