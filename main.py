@@ -3,7 +3,7 @@ import asyncio
 import requests
 import urllib.parse
 import edge_tts
-from mega import Mega
+from mega2 import Mega
 
 # Environment Variables
 MEGA_EMAIL = os.getenv("MEGA_EMAIL")
