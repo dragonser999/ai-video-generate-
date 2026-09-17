@@ -13,7 +13,7 @@ GDRIVE_FOLDER_ID = os.getenv("GDRIVE_FOLDER_ID")
 GDRIVE_JSON_STR = os.getenv("GDRIVE_SERVICE_ACCOUNT_JSON")
 
 # Hugging Face Video Model Endpoint (Free Inference API)
-HF_API_URL = "https://api-inference.huggingface.co/models/damo-vilab/text-to-video-ms-1.7b"
+HF_API_URL = "https://router.huggingface.co/hf-inference/v1/models/damo-vilab/text-to-video-ms-1.7b"
 
 # Google Drive Auth Setup
 def get_drive_service():
