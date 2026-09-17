@@ -22,9 +22,10 @@ def get_drive_service():
     except json.JSONDecodeError:
         service_account_info = json.loads(GDRIVE_JSON_STR.replace('\n', '\\n'))
         
+    # Full Drive scope to bypass storage quota restrictions on shared folders
     credentials = Credentials.from_service_account_info(
         service_account_info,
-        scopes=['https://www.googleapis.com/auth/drive.file']
+        scopes=['https://www.googleapis.com/auth/drive']
     )
     return build('drive', 'v3', credentials=credentials)
 
@@ -49,7 +50,7 @@ def generate_video_clip(prompt, output_file):
         print(f"Pollinations API Error Status: {response.status_code}")
         return False
 
-# Step 3: Upload Video to Google Drive (Fix for Service Account Quota Issue)
+# Step 3: Upload Video to Google Drive
 def upload_to_drive(file_path, folder_id):
     service = get_drive_service()
     file_metadata = {
@@ -62,7 +63,8 @@ def upload_to_drive(file_path, folder_id):
         body=file_metadata,
         media_body=media,
         fields='id',
-        supportsAllDrives=True
+        supportsAllDrives=True,
+        supportsTeamDrives=True
     ).execute()
     print(f"Uploaded successfully! File ID: {uploaded_file.get('id')}")
 
